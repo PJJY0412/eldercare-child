@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f7de1">
+<title>子女端 · 居家养老</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🏠</text></svg>">
+<style>
+  :root{--blue:#2f7de1;--green:#6aa84f;--red:#e04a4a;--bg:#f2f4f8;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:#222}
+  header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid #ddd;padding:10px 14px;display:flex;align-items:center;gap:10px}
+  header h1{font-size:18px;margin:0;flex:1}
+  .tabs{display:flex;gap:6px}
+  .tab{border:1px solid #ccc;background:#fff;border-radius:20px;padding:6px 14px;font-size:15px;cursor:pointer}
+  .tab.on{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}
+  main{max-width:860px;margin:0 auto;padding:12px 14px 90px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .row input,.row select{padding:8px 10px;font:15px inherit;border:1px solid #ccc;border-radius:8px;max-width:100%}
+  .btn{padding:8px 16px;font:15px inherit;border:none;border-radius:8px;background:var(--blue);color:#fff;cursor:pointer}
+  .btn.green{background:var(--green)}
+  .btn.gray{background:#888}
+  .card{border:1px solid #ddd;border-radius:10px;padding:10px 12px;margin:8px 0;background:#fff}
+  .sos{border-color:var(--red);background:#fff5f5}
+  .medlog{border-color:var(--green);background:#f6fff1}
+  .health{border-color:#b7c9e8;background:#f4f8ff}
+  .tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:#eee;margin-left:6px}
+  .sos .tag{background:var(--red);color:#fff}
+  .medlog .tag{background:var(--green);color:#fff}
+  .health .tag{background:var(--blue);color:#fff}
+  small{color:#888}
+  .cls-ok{color:#2e7d32;font-weight:600}
+  .cls-high{color:#c62828;font-weight:600}
+  .cls-low{color:#1565c0;font-weight:600}
+  .pay{word-break:break-all;white-space:pre-wrap}
+  .btn-ph{margin-top:8px;padding:5px 10px;font:14px inherit;border:1px solid #aaa;border-radius:6px;background:#fff;cursor:pointer}
+  .ph-img{max-width:300px;max-height:300px;border-radius:8px;margin-top:8px;border:1px solid #ddd;display:block}
+  .st{font-size:15px;margin:8px 0;min-height:22px}
+  .ok{color:#2e7d32}.err{color:#c62828}
+  textarea{width:100%;min-height:110px;font:15px inherit;line-height:1.7;border:1px solid #ccc;border-radius:8px;padding:8px 10px;margin:4px 0}
+  .tip{font-size:13px;color:#666;line-height:1.6}
+  .sect{font-size:16px;font-weight:700;margin:16px 0 4px}
+  .empty{padding:40px;text-align:center;color:#888}
+  .cfg label{display:block;font-size:14px;margin:10px 0 2px;color:#444}
+  .cfg input{width:100%;padding:9px 10px;font:15px inherit;border:1px solid #ccc;border-radius:8px}
+  .badge{font-size:12px;color:#fff;background:var(--blue);border-radius:10px;padding:2px 8px;margin-left:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏠 子女端 · 居家养老</h1>
+  <div class="tabs">
+    <button class="tab on" id="tab-tl" onclick="CHILD_VIEW.show('tl')">时间线</button>
+    <button class="tab" id="tab-hp" onclick="CHILD_VIEW.show('hp')">健康</button>
+    <button class="tab" id="tab-plan" onclick="CHILD_VIEW.show('plan')">药单提醒</button>
+    <button class="tab" id="tab-cfg" onclick="CHILD_VIEW.show('cfg')">设置</button>
+  </div>
+</header>
+<main id="app">
+
+  <!-- 时间线 -->
+  <section id="pg-tl">
+    <div class="row">
+      <select id="f-person"><option value="">全部老人</option></select>
+      <select id="f-type">
+        <option value="">全部类型</option>
+        <option value="sos">SOS 求助</option>
+        <option value="medlog">服药打卡</option>
+        <option value="health">健康记录</option>
+      </select>
+      <button class="btn" onclick="CHILD_VIEW.timeline()">刷新</button>
+    </div>
+    <div id="tl-out"><div class="empty">正在加载…</div></div>
+  </section>
+
+  <!-- 健康 -->
+  <section id="pg-hp" style="display:none">
+    <div class="row">
+      <select id="h-person"><option value="">全部老人</option></select>
+      <button class="btn" onclick="CHILD_VIEW.health()">加载</button>
+    </div>
+    <div class="tip">血压收缩压偏高 ≥140、偏低 ≤89；舒张压偏高 ≥90、偏低 ≤59；空腹血糖 3.9–6.1 mmol/L。</div>
+    <div id="hp-out"><div class="empty">正在加载…</div></div>
+  </section>
+
+  <!-- 药单提醒 -->
+  <section id="pg-plan" style="display:none">
+    <div class="tip">在这里填好并点保存，老人平板联网后会自动同步。保存为<b>整份覆盖</b>。</div>
+    <div class="row"><input id="plan-person" placeholder="老人姓名（与平板一致）" value="张奶奶"></div>
+    <div class="sect">💊 用药清单</div>
+    <div class="tip">每行一种药：<b>药名 剂量 时间 备注</b>；时间多个用逗号分隔，留空=随时吃。<br>例：降压药 1片 08:00,18:00 温水送服</div>
+    <textarea id="plan-meds" placeholder="降压药 1片 08:00,18:00 温水送服&#10;降糖药 1片 08:00 饭后吃"></textarea>
+    <div class="sect">🧭 今日提醒</div>
+    <div class="tip">每行一条：<b>时间 内容</b>。例：09:00 出门买菜，记得带钥匙</div>
+    <textarea id="plan-rems" placeholder="09:00 出门买菜，记得带钥匙&#10;11:00 量血压"></textarea>
+    <div class="st" id="plan-st"></div>
+    <button class="btn green" style="width:100%;padding:12px" onclick="CHILD_VIEW.savePlan()">保存并同步到平板</button>
+  </section>
+
+  <!-- 设置 -->
+  <section id="pg-cfg" style="display:none">
+    <div class="cfg">
+      <label>云端地址（Cloudflare Worker，部署后从工人拿到）</label>
+      <input id="cfg-url" placeholder="https://您的worker.workers.dev">
+      <label>家庭密钥（配对页 / 子女端设置里获取）</label>
+      <input id="cfg-key" placeholder="32 位 hex / 家庭令牌">
+      <div class="row" style="margin-top:12px">
+        <button class="btn" onclick="CHILD_VIEW.saveCfg(true)">保存并测试</button>
+        <button class="btn gray" onclick="CHILD_VIEW.clearData()">清空本地数据</button>
+      </div>
+      <div class="st" id="cfg-st"></div>
+      <div class="tip">
+        资料仅保存在<b>本机浏览器</b>（localStorage），上传一律走你自己的 Worker（普通 HTTPS 加密链路）。
+        换浏览器/清缓存会清掉这里的配置，但云端记录不受影响。
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+/*__CHILD_SCRIPT__*/
+(function(win){
+  var VER = '20260929-2';
+  var URL_KEY = 'eldercare_web_url', KEY_KEY = 'eldercare_web_key', PKEY = 'eldercare_web_person';
+
+  function get(k){ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } }
+  function set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+  function esc(s){ return (s===null||s===undefined?'':String(s)).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  /* 云端地址 + 密钥：整个应用统一入口 */
+  function conf(){ return { url: get(URL_KEY).replace(/\/+$/,''), key: get(KEY_KEY) }; }
+
+  /* 是否尚未配置（首屏引导用） */
+  function needsSetup(){ var c = conf(); return !c.url || !c.key; }
+
+  function api(method, path, body){
+    var c = conf();
+    if(!c.url || !c.key) return Promise.reject(new Error('未配置云端地址或密钥（请到设置页填写）'));
+    return fetch(c.url + path, {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + c.key },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function(r){
+      return r.json().catch(function(){ return { ok:false, err:'bad json, HTTP '+r.status }; });
+    }).then(function(j){
+      if(j && (j.err === 'need key' || j.err === 'bad key')) throw new Error('密钥无效：' + (j.err||''));
+      if(j && j.ok === false) throw new Error(j.err || '请求失败');
+      return j;
+    });
+  }
+
+  /* 时间线：事件流 + 健康记录合并，按下发时刻倒序 */
+  function mergeTimeline(events, health){
+    var arr = [];
+    (events||[]).forEach(function(e){
+      arr.push({ kind:'event', ts: Date.parse(e.at)||0, at: e.at||'', type:e.type||'', person:e.person||'', payload:e.payload||{}, raw:e });
+    });
+    (health||[]).forEach(function(h){
+      var ts = Date.parse(h.at) || new Date(String(h.date)+'T12:00:00').getTime();
+      arr.push({ kind:'health', ts: ts, at: h.at||h.date||'', date:h.date||'', person:h.person||'', sys:h.sys, dia:h.dia, glc:h.glc, hasImg: h.img?1:0, raw:h });
+    });
+    arr.sort(function(a,b){ return (b.ts-a.ts) || String(b.at).localeCompare(String(a.at)); });
+    return arr;
+  }
+  function fmtTime(iso){
+    var d = new Date(iso); if(isNaN(d.getTime())) return iso||'';
+    return d.toLocaleString('zh-CN',{hour12:false});
+  }
+  function fmtDate(d){ return String(d||''); }
+
+  /* 血压/血糖分级（与平板参考接近的简化版） */
+  function lv(v, kind){
+    if(v === null || v === undefined || v === '') return { cls:'', label:'未填' };
+    var n = Number(v);
+    if(kind === 'sys') return n>=140?{cls:'cls-high',label:'偏高'}:n<90?{cls:'cls-low',label:'偏低'}:{cls:'cls-ok',label:'正常'};
+    if(kind === 'dia') return n>=90?{cls:'cls-high',label:'偏高'}:n<60?{cls:'cls-low',label:'偏低'}:{cls:'cls-ok',label:'正常'};
+    return n>7.0?{cls:'cls-high',label:'偏高'}:n<3.9?{cls:'cls-low',label:'偏低'}:{cls:'cls-ok',label:'正常'};
+  }
+  function numStr(v){ return (v===null||v===undefined||v==='')?'—':String(v); }
+
+  /* 单条健康卡片正文（含分级） */
+  function healthLine(h){
+    var s = lv(h.sys,'sys'), d = lv(h.dia,'dia'), g = lv(h.glc,'glc');
+    var out = '血压 <span class="'+(s.cls||'')+'">'+numStr(h.sys)+'</span>/<span class="'+(d.cls||'')+'">'+numStr(h.dia)+'</span>';
+    out += ' · 血糖 <span class="'+(g.cls||'')+'">'+numStr(h.glc)+'</span>';
+    return out + ' <small>('+(h.sys!==null&&h.sys!==''?'收'+(s.label)+' ':'' )+(h.dia!==null&&h.dia!==''?'舒'+d.label+' ':'')+(h.glc!==null&&h.glc!==''?'糖'+g.label:'')+')</small>';
+  }
+
+  /* 单条时间线卡片 HTML；照片用懒加载按钮回调 imgHtml(item) */
+  function timelineCard(item, imgHtml){
+    if(item.kind === 'health'){
+      var ph = '';
+      if(item.hasImg && imgHtml){ ph = '<button class="btn-ph" data-ph="1" data-person="'+esc(item.person)+'" data-date="'+esc(item.date)+'">📷 查看当日照片</button>'; }
+      return '<div class="card health"><b>'+esc(item.person)+'</b><span class="tag">健康记录</span><small> '+esc(fmtDate(item.date))+'</small><br>'
+        + healthLine(item.raw) + '<br><small>记录于 '+esc(fmtTime(item.at))+'</small>' + ph + '</div>';
+    }
+    var isSos = item.type==='sos', isMed = item.type==='medlog';
+    var cls = isSos?'card sos':isMed?'card medlog':'card';
+    var body = '';
+    try{ var t = item.payload;
+      if(isSos){ body = (t && t.src==='emg' ? '🚨 应急电话 '+(t.tel||'') : '🆘 紧急求助'); }
+      else if(isMed){ var m=(t&&t.name)||''; body = '已吃：'+(t.names&&t.names.join('、'))+(m?'（'+(t.dose||'')+'）':''); }
+      if(!body) body = JSON.stringify(item.payload||{});
+    }catch(e){ body = String(JSON.stringify(item.payload||{})); }
+    return '<div class="'+cls+'"><b>'+esc(item.person)+'</b><span class="tag">'+esc(item.type)+'</span><small> '+esc(fmtTime(item.at))+'</small><br><span class="pay">'+esc(body)+'</span></div>';
+  }
+
+  /* 精准显示每条 phr 事件（来自平板 pushEvent 的 msg/at） */
+  function payText(p){
+    return (p&&p.msg)?p.msg:((p&&p.text)?p.text:JSON.stringify(p||{}));
+  }
+
+  /* ---------- 药单/提醒解析（与平板、Worker /plan 完全同格式） ---------- */
+  function parseMeds(t){
+    return String(t||'').split(/\r?\n/).map(function(l){
+      l=l.trim(); if(!l)return null;
+      var p=l.split(/\s+/), name=p[0]||''; if(!name)return null;
+      var dose='',times=[],i=1,note=[];
+      function nt(x){var m=String(x).trim().match(/^(\d{1,2})\s*[:：.]\s*(\d{1,2})$/);
+        if(m)return (m[1].length<2?'0':'')+m[1]+':'+(m[2].length<2?'0':'')+m[2];
+        m=String(x).trim().match(/^(\d{3,4})$/);
+        if(m){var n=String(parseInt(m[1],10));return n.length===4?n.slice(0,2)+':'+n.slice(2):'0'+n.slice(0,1)+':'+n.slice(1);}return '';}
+      function isT(x){return /^\d{1,2}\s*[:：.]\s*\d{1,2}([，,、;；]\s*\d{1,2}\s*[:：.]\s*\d{1,2})*$/.test(String(x).trim())||/^\d{3,4}$/.test(String(x).trim());}
+      if(i<p.length&&!isT(p[i])){dose=p[i];i++;}
+      if(i<p.length&&isT(p[i])){String(p[i]).split(/[，,、;；]/).forEach(function(x){var v=nt(x);if(v)times.push(v);});i++;}
+      for(;i<p.length;i++)note.push(p[i]);
+      if(!times.length)times=[''];
+      return {name:name,dose:dose,times:times,note:note.join(' ')};
+    }).filter(Boolean);
+  }
+  function parseRems(t){
+    return String(t||'').split(/\r?\n/).map(function(l){
+      l=l.trim(); if(!l)return null;
+      var sp=l.search(/\s/), head=sp<0?l:l.slice(0,sp), rest=sp<0?'':l.slice(sp+1).trim();
+      var m=head.match(/^(\d{1,2})\s*[:：.]\s*(\d{1,2})$/);
+      var tm=m?((m[1].length<2?'0':'')+m[1]+':'+(m[2].length<2?'0':'')+m[2]):'';
+      return {time:tm,text:tm?(rest||(tm+' 的提醒')):l};
+    }).filter(Boolean);
+  }
+  function medLine(m){var p=[m.name||'',m.dose||'',(m.times||[]).filter(Boolean).join(','),m.note||''];
+    while(p.length&&!p[p.length-1])p.pop();return p.join(' ');}
+
+  /* ============ 视图（DOM 不太参与测试，只暴露纯函数） ============ */
+  function el(id){ return document.getElementById(id); }
+  function setSt(id, html, cls){ var e=el(id); if(e){ e.innerHTML = html; e.className = cls||''; } }
+
+  function fillPersons(selId, list){
+    var sel = el(selId); if(!sel) return;
+    var cur = [];
+    for(var i=0;i<sel.options.length;i++) cur.push(sel.options[i].value);
+    var existing = sel.value;
+    list.forEach(function(p){ if(cur.indexOf(p)<0){ var o=document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o); } });
+    if(existing || list.length===0) sel.value = existing;
+  }
+
+  function timeline(){
+    var out = el('tl-out'); if(!out){ return; }
+    setSt('tl-out','<div class="empty">正在加载…</div>');
+    var person = el('f-person') ? el('f-person').value : '';
+    var type = el('f-type') ? el('f-type').value : '';
+    var qs = [];
+    if(person) qs.push('person='+encodeURIComponent(person));
+    if(type) qs.push('type='+encodeURIComponent(type));
+    Promise.all([
+      api('GET','/list'+(qs.length?'?'+qs.join('&'):'')),
+      api('GET','/api/health'+(person?'?person='+encodeURIComponent(person):''))
+    ]).then(function(rs){
+      var ev = (rs[0]&&rs[0].items)||[];
+      var hp = (rs[1]&&rs[1].records)||[];
+      fillPersons('f-person', (rs[1]&&rs[1].persons)||[]);
+      var items = mergeTimeline(ev, hp);
+      if(!items.length){ setSt('tl-out','<div class="empty">暂无记录（老人端还没上传数据，或本房间还没有事件）</div>'); return; }
+      var html = '<p><small>共 '+items.length+' 条</small></p>' + items.map(function(it){
+        return timelineCard(it, function(h){
+          var key = (it.person) + '|' + it.date;
+          return '<span style="display:none" data-ph-img="'+esc(key)+'"></span>';
+        });
+      }).join('');
+      setSt('tl-out', html);
+    }).catch(function(err){
+      setSt('tl-out','<div class="empty err">加载失败：'+esc(err.message)+'</div>');
+    });
+  }
+
+  function health(){
+    var out = el('hp-out'); if(!out){ return; }
+    setSt('hp-out','<div class="empty">正在加载…</div>');
+    var person = el('h-person') ? el('h-person').value : '';
+    api('GET','/api/health'+(person?'?person='+encodeURIComponent(person):'')).then(function(j){
+      var hp = j.records || [];
+      fillPersons('h-person', j.persons || []);
+      if(!hp.length){ setSt('hp-out','<div class="empty">暂无健康记录</div>'); return; }
+      var html = '<p><small>共 '+hp.length+' 天</small></p>' + hp.map(function(h){
+        return '<div class="card health"><b>'+esc(h.person)+'</b><small> '+esc(fmtDate(h.date))+'</small><br>'
+          + healthLine(h) + '<br><small>记录于 '+esc(fmtTime(h.at))+'</small>'
+          + (h.img ? '<br><button class="btn-ph" data-ph="1" data-person="'+esc(h.person)+'" data-date="'+esc(h.date)+'">📷 查看当日照片</button>' : '')
+          + '</div>';
+      }).join('');
+      setSt('hp-out', html);
+    }).catch(function(err){ setSt('hp-out','<div class="empty err">加载失败：'+esc(err.message)+'</div>'); });
+  }
+
+  function loadPlan(){
+    var person = el('plan-person') ? el('plan-person').value.trim() : '';
+    if(!person){ setSt('plan-st','请先填写老人姓名', 'err'); return; }
+    api('GET','/api/plan?person='+encodeURIComponent(person)).then(function(j){
+      if(el('plan-meds')) el('plan-meds').value = (j.meds||[]).map(medLine).join('\n');
+      if(el('plan-rems')) el('plan-rems').value = (j.rems||[]).map(function(r){ return (r.time?r.time+' ':'')+r.text; }).join('\n');
+      setSt('plan-st','已加载家人保存的药单与提醒','ok');
+    }).catch(function(err){ setSt('plan-st','加载失败：'+esc(err.message),'err'); });
+  }
+
+  function savePlan(){
+    var person = el('plan-person') ? el('plan-person').value.trim() : '';
+    var meds = parseMeds(el('plan-meds') ? el('plan-meds').value : '');
+    var rems = parseRems(el('plan-rems') ? el('plan-rems').value : '');
+    if(!meds.length && !rems.length){ setSt('plan-st','药单和提醒都为空，没有可保存的内容','err'); return; }
+    api('POST','/api/plan',{ person: person, meds: meds, rems: rems }).then(function(j){
+      setSt('plan-st','保存成功：'+meds.length+' 种药 / '+rems.length+' 条提醒（当前 '+j.at+'）','ok');
+    }).catch(function(err){ setSt('plan-st','保存失败：'+esc(err.message),'err'); });
+  }
+
+  function saveCfg(test){
+    var url = el('cfg-url').value.trim().replace(/\/+$/,'');
+    var key = el('cfg-key').value.trim();
+    if(!url || !key){ setSt('cfg-st','云端地址和家庭密钥都要填','err'); return; }
+    set(URL_KEY, url); set(KEY_KEY, key);
+    if(test){
+      setSt('cfg-st','正在测试连接…');
+      api('GET','/list?person=').then(function(j){
+        setSt('cfg-st','连接成功！本房间共 '+((j&&j.count)||0)+' 条事件。','ok');
+      }).catch(function(err){ setSt('cfg-st','连接失败：'+esc(err.message),'err'); });
+    } else { setSt('cfg-st','已保存','ok'); }
+  }
+
+  function clearData(){ try{ localStorage.removeItem(URL_KEY); localStorage.removeItem(KEY_KEY); }catch(e){}
+    setSt('cfg-st','已清空', 'ok'); }
+
+  function pref(selId){ var sel = el(selId); if(sel) sel.value = get(PKEY) || '张奶奶'; }
+
+  var VIEW = {
+    show: function(name){
+      ['tl','hp','plan','cfg'].forEach(function(n){
+        var pg = el('pg-'+n); if(pg) pg.style.display = (n===name)?'block':'none';
+        var tb = el('tab-'+n); if(tb) tb.className = 'tab'+(n===name?' on':'');
+      });
+      if(name==='tl') timeline();
+      else if(name==='hp') health();
+      else if(name==='plan') loadPlan();
+      else if(name==='cfg'){ var cu = el('cfg-url'), ck = el('cfg-key'); if(cu) cu.value = conf().url; if(ck) ck.value = conf().key; }
+    },
+    /* HTML onclick 走 CHILD_VIEW，统一挂到 VIEW 上 */
+    timeline: timeline, health: health, savePlan: savePlan, saveCfg: saveCfg, clearData: clearData
+  };
+
+  function start(){
+    if(!document.getElementById('app')) return;
+    if(typeof navigator!=='undefined' && 'serviceWorker' in navigator){
+      try{ navigator.serviceWorker.register('sw.js').catch(function(){}); }catch(e){}
+    }
+    /* 懒加载照片由原生事件代理统一处理 */
+    document.addEventListener('click', function(ev){
+      var t = ev && ev.target;
+      if(!t) return;
+      var btn = t.closest && t.closest('[data-ph]');
+      if(!btn) return;
+      if(btn.getAttribute('data-load')) return;
+      var person = btn.getAttribute('data-person'), date = btn.getAttribute('data-date');
+      btn.setAttribute('data-load','1');
+      btn.textContent = '加载中…';
+      api('GET','/api/health/img?person='+encodeURIComponent(person)+'&date='+encodeURIComponent(date)).then(function(j){
+        if(j && j.ok && j.img){
+          var im = document.createElement('img');
+          im.className = 'ph-img'; im.alt = '当日照片'; im.src = j.img;
+          btn.parentNode.insertBefore(im, btn.nextSibling);
+          btn.textContent = '📷 已加载';
+        } else { btn.textContent = '📷 无照片'; }
+      }).catch(function(){ btn.textContent = '📷 加载失败'; });
+    });
+    var u = el('cfg-url'); if(u) u.value = conf().url;
+    var k = el('cfg-key'); if(k) k.value = conf().key;
+    /* 首启未配置云端地址/密钥：直接引导到设置页，不弹红色加载失败 */
+    if(needsSetup()){
+      VIEW.show('cfg');
+      setSt('cfg-st','尚未配置：请先填写云端地址和家庭密钥，点「保存并测试」接通本户数据。','');
+      return;
+    }
+    VIEW.show('tl');
+  }
+
+  /* 暴露纯函数与启动器（测试用） */
+  win.CHILD = {
+    VER: VER, esc: esc, conf: conf, api: api, needsSetup: needsSetup,
+    mergeTimeline: mergeTimeline, fmtTime: fmtTime, fmtDate: fmtDate,
+    lv: lv, numStr: numStr, healthLine: healthLine, timelineCard: timelineCard,
+    parseMeds: parseMeds, parseRems: parseRems, medLine: medLine,
+    VIEW: VIEW, start: start
+  };
+  win.CHILD_VIEW = VIEW;  /* HTML onclick 用 CHILD_VIEW，与 win.CHILD 双名暴露 */
+
+  if(win.document && win.document.getElementById && document.getElementById('app')){
+    if(win.document.readyState === 'loading'){
+      win.document.addEventListener('DOMContentLoaded', start);
+    } else { start(); }
+  }
+})(window);
+/*__CHILD_SCRIPT_END__*/
+</script>
+</body>
+</html>
